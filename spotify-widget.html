@@ -29,20 +29,22 @@
 
         .spotify-widget {
             position: relative;
-            width: 420px;
-            height: 140px;
+            width: 450px;
+            height: 160px;
             background: 
-                linear-gradient(135deg, rgba(15, 15, 35, 0.85) 0%, rgba(10, 10, 25, 0.9) 100%);
-            border-radius: 25px;
+                linear-gradient(135deg, rgba(15, 15, 35, 0.9) 0%, rgba(10, 10, 25, 0.85) 100%);
+            border-radius: 30px;
             backdrop-filter: blur(15px);
+            border: 1px solid rgba(16, 185, 129, 0.2);
             overflow: hidden;
             box-shadow: 
-                0 0 40px rgba(16, 185, 129, 0.15),
-                0 0 80px rgba(16, 185, 129, 0.08);
+                0 0 40px rgba(16, 185, 129, 0.2),
+                0 0 80px rgba(16, 185, 129, 0.1),
+                inset 0 0 40px rgba(147, 51, 234, 0.05);
             display: flex;
             align-items: center;
-            padding: 25px;
-            gap: 25px;
+            padding: 30px;
+            gap: 30px;
             animation: widgetFloat 4s ease-in-out infinite alternate;
         }
 
@@ -722,6 +724,15 @@
         
         // Función global para conectar
         function connectSpotify() {
+            // Detectar si estamos en OBS
+            const isOBS = navigator.userAgent.includes('CEF') || window.obsstudio;
+            
+            if (isOBS) {
+                // En OBS, mostrar instrucciones
+                alert('Para conectar Spotify:\n\n1. Abre esta URL en tu navegador:\nhttps://maskscratch.github.io/spotywidget/spotify-widget.html\n\n2. Haz clic en "Conectar" allí\n\n3. Vuelve a OBS y actualiza la fuente');
+                return;
+            }
+            
             const authUrl = `https://accounts.spotify.com/authorize?` +
                 `response_type=token&` +
                 `client_id=${SPOTIFY_CONFIG.clientId}&` +

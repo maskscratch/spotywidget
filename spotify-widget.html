@@ -1,0 +1,561 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Widget de Spotify Automático</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap');
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Orbitron', monospace;
+            overflow: hidden;
+            background: transparent;
+            color: white;
+        }
+
+        .spotify-widget-container {
+            position: absolute;
+            top: 40px;
+            right: 40px;
+            z-index: 10;
+        }
+
+        .spotify-widget {
+            position: relative;
+            width: 400px;
+            height: 120px;
+            background: 
+                linear-gradient(135deg, rgba(15, 15, 35, 0.9) 0%, rgba(10, 10, 25, 0.85) 100%);
+            border-radius: 20px;
+            backdrop-filter: blur(15px);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            overflow: hidden;
+            box-shadow: 
+                0 0 30px rgba(16, 185, 129, 0.2),
+                0 0 60px rgba(16, 185, 129, 0.1),
+                inset 0 0 30px rgba(147, 51, 234, 0.05);
+            display: flex;
+            align-items: center;
+            padding: 20px;
+            gap: 20px;
+            animation: widgetFloat 4s ease-in-out infinite alternate;
+        }
+
+        .album-art {
+            position: relative;
+            width: 80px;
+            height: 80px;
+            border-radius: 12px;
+            overflow: hidden;
+            border: 2px solid rgba(16, 185, 129, 0.4);
+            box-shadow: 0 0 20px rgba(16, 185, 129, 0.3);
+        }
+
+        .album-art img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .album-art::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(45deg, 
+                transparent 0%, 
+                rgba(16, 185, 129, 0.1) 50%, 
+                transparent 100%);
+            animation: albumShine 3s ease-in-out infinite;
+        }
+
+        .track-info {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            min-width: 0;
+        }
+
+        .track-name {
+            font-size: 16px;
+            font-weight: 700;
+            letter-spacing: 1px;
+            color: #ffffff;
+            text-shadow: 0 0 10px rgba(16, 185, 129, 0.5);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .artist-name {
+            font-size: 12px;
+            font-weight: 400;
+            letter-spacing: 0.5px;
+            color: #10b981;
+            text-shadow: 0 0 8px rgba(16, 185, 129, 0.4);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .spotify-status {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-top: 4px;
+        }
+
+        .spotify-icon {
+            width: 16px;
+            height: 16px;
+            background: #1DB954;
+            border-radius: 50%;
+            position: relative;
+            animation: spotifyPulse 2s ease-in-out infinite;
+        }
+
+        .spotify-icon::after {
+            content: '♪';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 10px;
+            color: white;
+        }
+
+        .status-text {
+            font-size: 10px;
+            font-weight: 400;
+            letter-spacing: 0.5px;
+            color: rgba(255, 255, 255, 0.7);
+            text-transform: uppercase;
+        }
+
+        .progress-container {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, #1DB954, #10b981);
+            width: 0%;
+            transition: width 1s linear;
+            box-shadow: 0 0 10px rgba(29, 185, 84, 0.5);
+        }
+
+        .widget-glow-top {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, 
+                transparent, 
+                rgba(16, 185, 129, 0.8), 
+                rgba(29, 185, 84, 0.8), 
+                transparent
+            );
+            filter: blur(1px);
+            animation: glowFlow 4s linear infinite;
+        }
+
+        .floating-particles {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            overflow: hidden;
+        }
+
+        .particle {
+            position: absolute;
+            width: 2px;
+            height: 2px;
+            background: rgba(16, 185, 129, 0.6);
+            border-radius: 50%;
+            animation: particleFloat 6s ease-in-out infinite;
+        }
+
+        .particle:nth-child(1) {
+            top: 20%;
+            left: 10%;
+            animation-delay: 0s;
+        }
+
+        .particle:nth-child(2) {
+            top: 60%;
+            left: 80%;
+            animation-delay: 2s;
+        }
+
+        .particle:nth-child(3) {
+            top: 80%;
+            left: 30%;
+            animation-delay: 4s;
+        }
+
+        .auth-button {
+            background: linear-gradient(135deg, #1DB954, #10b981);
+            border: none;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-family: 'Orbitron', monospace;
+            font-size: 10px;
+            font-weight: 700;
+            letter-spacing: 1px;
+            cursor: pointer;
+            text-transform: uppercase;
+            box-shadow: 0 0 15px rgba(29, 185, 84, 0.4);
+            transition: all 0.3s ease;
+        }
+
+        .auth-button:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 25px rgba(29, 185, 84, 0.6);
+        }
+
+        /* Animaciones */
+        @keyframes widgetFloat {
+            0% { transform: translateY(0px); }
+            100% { transform: translateY(-5px); }
+        }
+
+        @keyframes albumShine {
+            0%, 100% {
+                transform: translateX(-100%) rotate(45deg);
+                opacity: 0;
+            }
+            50% {
+                opacity: 1;
+            }
+        }
+
+        @keyframes spotifyPulse {
+            0%, 100% {
+                transform: scale(1);
+                box-shadow: 0 0 10px rgba(29, 185, 84, 0.5);
+            }
+            50% {
+                transform: scale(1.1);
+                box-shadow: 0 0 20px rgba(29, 185, 84, 0.8);
+            }
+        }
+
+        @keyframes glowFlow {
+            0% {
+                transform: translateX(-100%);
+                opacity: 0;
+            }
+            50% {
+                opacity: 1;
+            }
+            100% {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+        }
+
+        @keyframes particleFloat {
+            0%, 100% {
+                transform: translateY(0px) scale(1);
+                opacity: 0.3;
+            }
+            50% {
+                transform: translateY(-10px) scale(1.2);
+                opacity: 0.8;
+            }
+        }
+
+        /* Responsivo */
+        @media (max-width: 768px) {
+            .spotify-widget-container {
+                top: 20px;
+                right: 20px;
+            }
+            
+            .spotify-widget {
+                width: 320px;
+                height: 100px;
+                padding: 15px;
+            }
+            
+            .album-art {
+                width: 60px;
+                height: 60px;
+            }
+            
+            .track-name {
+                font-size: 14px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="spotify-widget-container">
+        <div class="spotify-widget">
+            <div class="floating-particles">
+                <div class="particle"></div>
+                <div class="particle"></div>
+                <div class="particle"></div>
+            </div>
+            
+            <div class="album-art" id="albumArt">
+                <img src="https://via.placeholder.com/80x80/1a1a1a/10b981?text=♪" alt="Album Art" id="albumImage">
+            </div>
+            
+            <div class="track-info">
+                <div class="track-name" id="trackName">Conecta tu Spotify</div>
+                <div class="artist-name" id="artistName">Para mostrar música en vivo</div>
+                <div class="spotify-status">
+                    <div class="spotify-icon"></div>
+                    <button class="auth-button" id="authButton" onclick="connectSpotify()">Conectar</button>
+                </div>
+            </div>
+            
+            <div class="progress-container">
+                <div class="progress-bar" id="progressBar"></div>
+            </div>
+            
+            <div class="widget-glow-top"></div>
+        </div>
+    </div>
+
+    <script>
+        // Configuración usando un proxy CORS gratuito
+        const SPOTIFY_CONFIG = {
+            clientId: 'bad57584024a467e8ed3aa6676d1fd32',
+            redirectUri: window.location.origin + window.location.pathname,
+            scopes: 'user-read-currently-playing user-read-playback-state',
+            proxyUrl: 'https://cors-anywhere.herokuapp.com/' // Proxy CORS gratuito
+        };
+
+        class AutomaticSpotifyWidget {
+            constructor() {
+                this.accessToken = null;
+                this.refreshToken = null;
+                this.tokenExpiry = null;
+                this.currentTrack = null;
+                this.isPlaying = false;
+                this.progress = 0;
+                this.duration = 0;
+                
+                this.elements = {
+                    trackName: document.getElementById('trackName'),
+                    artistName: document.getElementById('artistName'),
+                    albumImage: document.getElementById('albumImage'),
+                    authButton: document.getElementById('authButton'),
+                    progressBar: document.getElementById('progressBar')
+                };
+                
+                this.init();
+            }
+            
+            init() {
+                this.loadTokens();
+                
+                if (this.accessToken && this.isTokenValid()) {
+                    this.startPolling();
+                    this.hideAuthButton();
+                } else {
+                    this.showAuthButton();
+                }
+                
+                // Manejar callback de autenticación
+                this.handleAuthCallback();
+            }
+            
+            loadTokens() {
+                this.accessToken = localStorage.getItem('spotify_access_token');
+                this.refreshToken = localStorage.getItem('spotify_refresh_token');
+                this.tokenExpiry = localStorage.getItem('spotify_token_expiry');
+            }
+            
+            saveTokens(accessToken, refreshToken = null, expiresIn = 3600) {
+                this.accessToken = accessToken;
+                this.tokenExpiry = Date.now() + (expiresIn * 1000);
+                
+                localStorage.setItem('spotify_access_token', accessToken);
+                localStorage.setItem('spotify_token_expiry', this.tokenExpiry);
+                
+                if (refreshToken) {
+                    this.refreshToken = refreshToken;
+                    localStorage.setItem('spotify_refresh_token', refreshToken);
+                }
+            }
+            
+            isTokenValid() {
+                return this.tokenExpiry && Date.now() < this.tokenExpiry - 60000; // 1 minuto de margen
+            }
+            
+            showAuthButton() {
+                this.elements.authButton.style.display = 'block';
+                this.elements.trackName.textContent = 'Conecta tu Spotify';
+                this.elements.artistName.textContent = 'Para mostrar música en vivo';
+            }
+            
+            hideAuthButton() {
+                this.elements.authButton.style.display = 'none';
+            }
+            
+            handleAuthCallback() {
+                const hash = window.location.hash.substring(1);
+                if (!hash) return;
+                
+                const params = new URLSearchParams(hash);
+                const accessToken = params.get('access_token');
+                const expiresIn = params.get('expires_in');
+                
+                if (accessToken) {
+                    this.saveTokens(accessToken, null, parseInt(expiresIn));
+                    this.hideAuthButton();
+                    this.startPolling();
+                    
+                    // Limpiar URL
+                    window.history.replaceState({}, document.title, window.location.pathname);
+                }
+            }
+            
+            async getCurrentTrack() {
+                if (!this.isTokenValid()) {
+                    this.showAuthButton();
+                    return;
+                }
+                
+                try {
+                    const response = await fetch(`${SPOTIFY_CONFIG.proxyUrl}https://api.spotify.com/v1/me/player/currently-playing`, {
+                        headers: {
+                            'Authorization': `Bearer ${this.accessToken}`,
+                            'X-Requested-With': 'XMLHttpRequest'
+                        }
+                    });
+                    
+                    if (response.status === 401) {
+                        this.showAuthButton();
+                        return;
+                    }
+                    
+                    if (response.status === 204) {
+                        this.showNoTrack();
+                        return;
+                    }
+                    
+                    const data = await response.json();
+                    
+                    if (!data.is_playing) {
+                        this.showPaused(data);
+                    } else {
+                        this.updateTrackInfo(data);
+                    }
+                    
+                } catch (error) {
+                    console.error('Error fetching current track:', error);
+                    this.showError();
+                }
+            }
+            
+            updateTrackInfo(data) {
+                if (!data.item) {
+                    this.showNoTrack();
+                    return;
+                }
+                
+                const track = data.item;
+                const artists = track.artists.map(artist => artist.name).join(', ');
+                
+                this.elements.trackName.textContent = track.name;
+                this.elements.artistName.textContent = artists;
+                this.elements.albumImage.src = track.album.images[0]?.url || 'https://via.placeholder.com/80x80/1a1a1a/10b981?text=♪';
+                
+                this.isPlaying = data.is_playing;
+                this.progress = data.progress_ms;
+                this.duration = track.duration_ms;
+                
+                // Actualizar barra de progreso
+                const progressPercent = (this.progress / this.duration) * 100;
+                this.elements.progressBar.style.width = `${progressPercent}%`;
+            }
+            
+            showPaused(data) {
+                if (data.item) {
+                    const track = data.item;
+                    const artists = track.artists.map(artist => artist.name).join(', ');
+                    
+                    this.elements.trackName.textContent = `⏸️ ${track.name}`;
+                    this.elements.artistName.textContent = artists;
+                    this.elements.albumImage.src = track.album.images[0]?.url || 'https://via.placeholder.com/80x80/1a1a1a/666666?text=⏸️';
+                } else {
+                    this.showNoTrack();
+                }
+            }
+            
+            showNoTrack() {
+                this.elements.trackName.textContent = 'Sin reproducción activa';
+                this.elements.artistName.textContent = 'Inicia música en Spotify';
+                this.elements.albumImage.src = 'https://via.placeholder.com/80x80/1a1a1a/666666?text=♪';
+                this.elements.progressBar.style.width = '0%';
+            }
+            
+            showError() {
+                this.elements.trackName.textContent = 'Error de conexión';
+                this.elements.artistName.textContent = 'Reintentando...';
+                this.elements.albumImage.src = 'https://via.placeholder.com/80x80/1a1a1a/ff6b6b?text=!';
+            }
+            
+            startPolling() {
+                // Verificar conexión inicial
+                this.getCurrentTrack();
+                
+                // Actualizar cada 5 segundos
+                setInterval(() => {
+                    this.getCurrentTrack();
+                }, 5000);
+                
+                // Actualizar progreso cada segundo si está reproduciendo
+                setInterval(() => {
+                    if (this.isPlaying && this.duration > 0) {
+                        this.progress += 1000;
+                        const progressPercent = Math.min((this.progress / this.duration) * 100, 100);
+                        this.elements.progressBar.style.width = `${progressPercent}%`;
+                    }
+                }, 1000);
+            }
+        }
+        
+        // Función global para conectar
+        function connectSpotify() {
+            const authUrl = `https://accounts.spotify.com/authorize?` +
+                `response_type=token&` +
+                `client_id=${SPOTIFY_CONFIG.clientId}&` +
+                `scope=${encodeURIComponent(SPOTIFY_CONFIG.scopes)}&` +
+                `redirect_uri=${encodeURIComponent(SPOTIFY_CONFIG.redirectUri)}&` +
+                `show_dialog=true`;
+            
+            window.location.href = authUrl;
+        }
+        
+        // Inicializar el widget cuando se carga la página
+        document.addEventListener('DOMContentLoaded', function() {
+            new AutomaticSpotifyWidget();
+        });
+    </script>
+</body>
+</html>
